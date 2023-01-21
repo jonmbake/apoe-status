@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="A tool to parse 23andMe raw data to determine APOE status.">
+  <link rel="icon" href="favicon.ico">
+  <title>APOE Status</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link href="app.css" rel="stylesheet">
+</head>
+
+<body class="text-center">
+  <form id="form" class="apoe-form">
+    <img class="mb-4" src="apoe-status.png" alt="" width="72" height="72">
+    <h1 class="h3 mb-3 font-weight-normal">APOE Status</h1>
+    <p>This tool works by parsing your 23andMe raw data to determine your <a
+        href="https://medlineplus.gov/genetics/gene/apoe/">APOE status</a>. <b>Select your 23andMe raw data file to get
+        started.</b></p>
+    <label for="rawDataInput" class="sr-only">Raw data</label>
+    <input type="file" id="rawDataInput" class="form-control" placeholder="Raw data" required autofocus>
+    <button class="btn btn-lg btn-primary btn-block" type="submit">Determine my status</button>
+    <div id="alert" class="alert mt-2" role="alert" style="display: none">
+      This is a primary alert—check it out!
+    </div>
+    <p class="mt-5 mb-3 text-muted"><a href="https://medlineplus.gov/genetics/gene/apoe/">APOE gene info</a> | <a
+        href="https://www.apoe4.info/welcome/">APOE4 info</a> <br /> <a
+        href="https://customercare.23andme.com/hc/en-us/articles/212196868-Accessing-Your-Raw-Genetic-Data">How to
+        download 23andMe raw data</a></p>
+  </form>
+  <script>
+    document.getElementById("form").addEventListener("submit", function handleFile(event) {
+      event.preventDefault();
+      const file = document.getElementById("rawDataInput")?.files[0];
+      const reader = new FileReader();
+      reader.onload = function () {
+        const genotypeData = reader.result;
+        const status = parseGenotype(genotypeData);
+      }
+      reader.readAsText(file);
+    });
+    function parseGenotype(genotypeData) {
+      const apoeGenes = genotypeData
+        .split(/[\r\n]+/)
+        .map(line => line.trim())
+        .filter(line => line.startsWith("rs429358\t") || line.startsWith("rs7412\t"))
+        .sort()
+        .map(line => line.split('\t')[3])
+        .join('')
+      if (apoeGenes == null || apoeGenes.length != 4) {
+        document.getElementById("alert").textContent = "Unable to parse selected file as 23andMe raw data. Please ensure the correct file was selected.";
+        document.getElementById("alert").className = "alert alert-danger mt-2"
+        document.getElementById("alert").style.display = null;
+      } else {
+        const apoeStatus = {
+          'TTTT': 'E2/E2',
+          'TTCT': 'E2/E3',
+          'CTCT': 'E2/E4',
+          'TTCC': 'E3/E3',
+          'CTCC': 'E3/E4',
+          'CCCC': 'E4/E4'
+        };
+
+        document.getElementById("alert").textContent = `Your APOE status is: ${apoeStatus[apoeGenes]}`;
+        document.getElementById("alert").className = "alert alert-info mt-2"
+        document.getElementById("alert").style.display = null;
+      }
+      document.getElementById("rawDataInput").value = null;
+    }
+  </script>
+</body>
+</html>
